@@ -1,12 +1,87 @@
 <template>
-  <h1>Vue basics</h1>
+  <div class="users">
+    <div class="container">
+      <section>
+        <h5>New User</h5>
+        <form @submit.prevent="createUser">
+          <input type="text" placeholder="Name" v-model="form.name" />
+          <input type="text" placeholder="Email" v-model="form.email" />
+          <button type="submit">Add user</button>
+        </form>
+      </section>
+      <section>
+        <h5 class="title">Users list</h5>
+        <ul>
+          <li v-for="user in users" :key="user.id">
+            <p>{{ user.name }}</p>
+            <small>{{ user.email }}</small>
+            <a class="destroy" @click="destroyUser(user.id)"></a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import axios from '@/utils/axios';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+}
 
 export default defineComponent({
   name: 'App',
+  data() {
+    return {
+      users: [] as User[],
+      form: {
+        name: '',
+        email: '',
+      },
+    };
+  },
+  created() {
+    this.fetchUsers();
+  },
+  methods: {
+    async fetchUsers() {
+      try {
+        const { data } = await axios.get('/users');
+        this.users = data;
+      } catch (error) {
+        console.warn("Can't get users");
+      }
+    },
+    async createUser() {
+      try {
+        const { data } = await axios.post('users/', this.form);
+
+        this.users.push(data);
+
+        this.form = {
+          name: '',
+          email: '',
+        };
+      } catch (error) {
+        console.warn("Can't create user");
+      }
+    },
+    async destroyUser(id: User['id']) {
+      try {
+        await axios.delete(`users/${id}`);
+
+        const userIndex = this.users.findIndex((user) => user.id === id);
+
+        this.users.splice(userIndex, 1);
+      } catch (error) {
+        console.warn("Can't delete user");
+      }
+    },
+  },
 });
 </script>
 
